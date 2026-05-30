@@ -1,0 +1,23 @@
+# Build outputs
+dist
+build
+coverage
+
+# Dependencies
+node_modules
+
+# Docker
+.docker
+
+# Generated / minified
+*.min.js
+*.min.css
+**/*.d.ts
+
+# Lock files (no formatear para evitar diffs masivos)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Public assets
+public
