@@ -1,6 +1,2 @@
 cd "$(dirname "$0")/../"
 pnpm test
-if [ $? -ne 0 ]; then
-  echo "Tests failed. Push aborted."
-  exit 1
-fi
