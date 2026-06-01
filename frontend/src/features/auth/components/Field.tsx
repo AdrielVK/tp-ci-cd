@@ -30,7 +30,7 @@ export default function Field({
   return (
     <label className="grid gap-2 text-sm text-slate-700" htmlFor={id ?? String(name)}>
       <span className="font-medium">{label}</span>
-      <input
+      <inpu
         id={id ?? String(name)}
         name={name}
         type={type}
