@@ -1,0 +1,14 @@
+# Force LF line endings in the repository for source files
+* text=auto eol=lf
+
+# Keep binary files unchanged
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary

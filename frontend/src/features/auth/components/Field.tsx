@@ -1,18 +1,18 @@
-import type { ComponentPropsWithoutRef } from 'react'
-import type { FieldError } from 'react-hook-form'
+import type { ComponentPropsWithoutRef } from "react";
+import type { FieldError } from "react-hook-form";
 
-interface FieldProps extends ComponentPropsWithoutRef<'input'> {
-  label: string
-  error?: string | FieldError
+interface FieldProps extends ComponentPropsWithoutRef<"input"> {
+  label: string;
+  error?: string | FieldError;
 }
 
 function getErrorMessage(error?: string | FieldError): string | undefined {
-  if (typeof error === 'string') {
-    return error
+  if (typeof error === "string") {
+    return error;
   }
 
-  if (error && 'message' in error && typeof error.message === 'string') {
-    return error.message
+  if (error && "message" in error && typeof error.message === "string") {
+    return error.message;
   }
 }
 
@@ -20,17 +20,17 @@ export default function Field({
   label,
   id,
   name,
-  type = 'text',
+  type = "text",
   error,
-  className = '',
+  className = "",
   ...rest
 }: FieldProps) {
-  const errorMessage = getErrorMessage(error)
+  const errorMessage = getErrorMessage(error);
 
   return (
     <label className="grid gap-2 text-sm text-slate-700" htmlFor={id ?? String(name)}>
       <span className="font-medium">{label}</span>
-      <inpu
+      <input
         id={id ?? String(name)}
         name={name}
         type={type}
@@ -45,5 +45,5 @@ export default function Field({
         </span>
       ) : null}
     </label>
-  )
+  );
 }
