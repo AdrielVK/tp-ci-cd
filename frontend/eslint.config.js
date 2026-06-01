@@ -24,6 +24,18 @@ const jsBrowserGlobals = {
   URL: "readonly",
 };
 
+const vitestGlobals = {
+  describe: "readonly",
+  it: "readonly",
+  test: "readonly",
+  expect: "readonly",
+  vi: "readonly",
+  beforeEach: "readonly",
+  afterEach: "readonly",
+  beforeAll: "readonly",
+  afterAll: "readonly",
+};
+
 const tsParserOptions = {
   languageOptions: {
     globals: jsBrowserGlobals,
@@ -335,6 +347,13 @@ export default [
   {
     files: TEST_FILES,
     ...tsParserOptions,
+    languageOptions: {
+      ...tsParserOptions.languageOptions,
+      globals: {
+        ...tsParserOptions.languageOptions.globals,
+        ...vitestGlobals,
+      },
+    },
     plugins: {
       "@typescript-eslint": ts,
       vitest: vitestPlugin,
@@ -365,6 +384,8 @@ export default [
 
       // Relajamos algunas reglas estrictas en tests
       "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "max-lines-per-function": "off",

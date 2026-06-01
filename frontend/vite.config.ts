@@ -14,6 +14,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.ts', // Archivo para extender matchers de Jest-DOM
+    setupFiles: './src/test/setup-tests.ts', // Archivo para extender matchers de Jest-DOM
   },
 })

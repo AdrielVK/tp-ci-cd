@@ -1,0 +1,35 @@
+# Dependencias (se instalan dentro del contenedor)
+node_modules
+
+# Build outputs
+dist
+build
+coverage
+
+# Git
+.git
+.gitignore
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docker (evita recursión)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Variables de entorno locales (nunca al contenedor)
+.env.local
+.env.*.local
