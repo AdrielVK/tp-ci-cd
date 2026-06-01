@@ -16,7 +16,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: "./src/test/setup-tests.ts", // Archivo para extender matchers de Jest-DOM
     coverage: {
-      provider: "c8",
+      provider: "istanbul",
       reporter: ["text", "lcov", "html"],
       reportsDirectory: "coverage",
       all: true,
