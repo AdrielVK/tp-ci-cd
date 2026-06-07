@@ -36,15 +36,10 @@ CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 # Compila el proyecto para producción
 # ─────────────────────────────────────────────────────────────────────────────
 FROM base AS builder
-
-# Solo dependencias de producción + devDeps necesarias para el build
 RUN pnpm install --frozen-lockfile
-
 COPY . .
-
-# Ejecuta lint y type-check antes del build (falla el build si hay errores)
-RUN pnpm lint
-RUN pnpm tsc --noEmit
+RUN pnpm lint:ci
+RUN pnpm type-check
 RUN pnpm build
 
 

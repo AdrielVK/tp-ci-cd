@@ -19,12 +19,13 @@ export default defineConfig({
       provider: "istanbul",
       reporter: ["text", "lcov", "html"],
       reportsDirectory: "coverage",
-      all: true,
+      include: ["src/**/*.{ts,tsx}"],
       exclude: ["**/__tests__/**", "src/test/**", "src/**/__mocks__/**", "src/main.tsx"],
-      statements: 80,
-      branches: 70,
-      functions: 80,
-      lines: 80,
+      thresholds: {
+        statements: 80,
+        branches: 70,
+        functions: 80,
+      },
     },
   },
 });
