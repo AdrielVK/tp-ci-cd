@@ -1,4 +1,4 @@
-import LoginForm from '@/features/auth/components/LoginForm'
+import LoginForm from "@/features/auth/components/LoginForm";
 
 export default function Login() {
   return (
@@ -14,5 +14,5 @@ export default function Login() {
         </div>
       </div>
     </section>
-  )
+  );
 }

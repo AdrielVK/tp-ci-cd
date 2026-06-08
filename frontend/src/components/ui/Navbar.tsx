@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 
-import { routes } from '@/router/routes'
+import { routes } from "@/router/routes";
 
 export default function Navbar() {
   return (
@@ -20,5 +20,5 @@ export default function Navbar() {
         </nav>
       </div>
     </header>
-  )
+  );
 }

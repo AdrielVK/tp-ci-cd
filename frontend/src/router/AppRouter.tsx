@@ -1,13 +1,13 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import Navbar from '@/components/ui/Navbar'
-import Home from '@/pages/Home'
-import Login from '@/pages/Login'
-import { routes } from '@/router/routes'
+import Navbar from "@/components/ui/Navbar";
+import Home from "@/pages/Home";
+import Login from "@/pages/Login";
+import { routes } from "@/router/routes";
 
 export default function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <Navbar />
 
@@ -19,5 +19,5 @@ export default function AppRouter() {
         </main>
       </div>
     </BrowserRouter>
-  )
+  );
 }

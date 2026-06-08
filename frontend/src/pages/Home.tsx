@@ -4,5 +4,5 @@ export default function Home() {
       <h2 className="text-3xl font-semibold text-slate-950">Hola mundo</h2>
       <p className="mt-4 text-slate-600">Esta es la vista principal de la aplicación.</p>
     </section>
-  )
+  );
 }

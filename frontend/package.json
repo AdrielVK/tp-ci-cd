@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage --pool=threads",
-    "ci": "pnpm type-check && pnpm lint:ci && pnpm format:check && pnpm coverage"
+    "validate": "pnpm type-check && pnpm lint:ci && pnpm format:check && pnpm coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.1.1",
