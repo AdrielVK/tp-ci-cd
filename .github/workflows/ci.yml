@@ -87,11 +87,14 @@ jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — build
-  # Corre SOLO cuando el código se acerca a producción:
-  #   - Push o PR hacia master    (release/* → master)
-  #   - Push o PR hacia release/* (develop   → release/*)
-  # Verifica que el build de Docker de producción se construye correctamente.
+  # Verifica que el Dockerfile de producción se construye correctamente.
   # Incluye lint, type-check y build de Vite (definidos en el Dockerfile).
+  #
+  # Corre en:
+  #   - TODOS los PRs (feature/* → develop, develop → release/*, release/* → master)
+  #   - Push a master (código productivo)
+  #   - Push a develop (rama de integración)
+  #   - Push a release/* (release candidates)
   # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -99,23 +102,14 @@ jobs:
     needs: validate
 
     if: |
+      github.event_name == 'pull_request' ||
       github.ref == 'refs/heads/master' ||
-      startsWith(github.ref, 'refs/heads/release/') ||
-      (github.event_name == 'pull_request' && github.base_ref == 'master') ||
-      (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/'))
+      github.ref == 'refs/heads/develop' ||
+      startsWith(github.ref, 'refs/heads/release/')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Cache de layers de Docker para acelerar builds sucesivos
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ hashFiles('frontend/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -129,11 +123,48 @@ jobs:
           file: ./frontend/Dockerfile
           target: production
           push: false
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      # Workaround necesario para evitar que el cache crezca indefinidamente
-      - name: Move Docker cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  publish:
+    name: Publish to GHCR
+    needs: build
+    runs-on: ubuntu-24.04
+    # ⭐ SOLO en master (la rama productiva)
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+      
+      - name: Build and push to GHCR
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
