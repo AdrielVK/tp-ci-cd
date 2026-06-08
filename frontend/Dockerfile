@@ -5,7 +5,7 @@
 FROM node:22-alpine AS base
 
 # Instala pnpm globalmente via corepack (viene incluido en Node 22)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 WORKDIR /app
 
