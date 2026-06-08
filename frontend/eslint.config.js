@@ -307,7 +307,7 @@ export default [
         "error",
         {
           cases: { kebabCase: true, pascalCase: true },
-          ignore: [/^[A-Z][a-zA-Z]+\.(tsx|ts)$/],
+          ignore: [/^__/, /^[A-Z][a-zA-Z]+\.(tsx|ts)$/],  // /^__/ ignora __tests__, __mocks__, etc.
         },
       ],
 

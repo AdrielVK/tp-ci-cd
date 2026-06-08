@@ -24,7 +24,7 @@ export default function Field({
   error,
   className = "",
   ...rest
-}: FieldProps) {
+}: Readonly<FieldProps>) {
   const errorMessage = getErrorMessage(error);
 
   return (
