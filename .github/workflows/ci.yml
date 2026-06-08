@@ -1,23 +1,30 @@
 name: CI
+
 on:
-  #El ci se ejecuta cuando se hace push/pull-r a las siguientes ramas:
+  # El CI se ejecuta cuando se hace push/pull-request a las siguientes ramas:
   push:
     branches:
-      - main
+      - master
       - develop
       - "release/**"
       - "hotfix/**"
+
   pull_request:
     branches:
-      - main
+      - master
       - develop
-      - "release/**"
+
 # Cancela runs anteriores del mismo PR si se hace un nuevo push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
-  #Job 1 - validate -> Verifica  tipos, lint, formato y tests con cobertura
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1 — validate
+  # Verifica tipos, lint, formato y tests con cobertura
+  # Corre en TODAS las ramas y PRs
+  # ───────────────────────────────────────────────────────────────────────────
   validate:
     name: Validate
     runs-on: ubuntu-24.04
@@ -25,28 +32,34 @@ jobs:
     defaults:
       run:
         working-directory: frontend
+
     steps:
-      #trae el codigo al runner
+      # Trae el código al runner
       - name: Checkout
         uses: actions/checkout@v4
-      #mete pnpm
+
+      # Instala pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9.12.3
-      #instala node 22 y activa el cache de pnpm
+
+      # Instala Node 22 y activa el cache de pnpm
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
-    # instala dependencias respetando el lockfile exacto
+
+      # Instala dependencias respetando el lockfile exacto
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-    #LOS SIGUIENTES PASOS SE PODRIAN EJECUTAR CON EL SCRIPT "validate" DEFINIDO EN EL package.json, PERO SE EJECUTAN POR SEPARADO PARA TENER UN MEJOR FEEDBACK DE LOS ERRORES
-    #POR VISIBILIDAD SE LO REALIZA SEPARADO
-    # Verifica que no haya errores de tipos en TypeScript
+
+      # Los siguientes pasos se podrían ejecutar con el script "validate" definido
+      # en package.json, pero se separan para tener mejor feedback visual en GitHub
+
+      # Verifica que no haya errores de tipos en TypeScript
       - name: Type check
         run: pnpm type-check
 
@@ -61,59 +74,66 @@ jobs:
       # Verifica que los tests se ejecuten correctamente y que la cobertura supere los umbrales
       - name: Test & Coverage
         run: pnpm coverage
+
       # Publica el reporte de cobertura como artefacto descargable
       # Disponible en la pestaña "Actions" del PR en GitHub
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: always()  # Sube el reporte incluso si los tests fallan
+        if: always()
         with:
           name: coverage-report
           path: frontend/coverage
           retention-days: 7
-  #aplica solo cuando el codigo va a produccion. release -> master o develop -> release
-  #verifica que el build de Docker de producción se construye correctamente.
-  #incluye lint, type-check y build de Vite (definidos en el Dockerfile).
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2 — build
+  # Corre SOLO cuando el código se acerca a producción:
+  #   - Push o PR hacia master    (release/* → master)
+  #   - Push o PR hacia release/* (develop   → release/*)
+  # Verifica que el build de Docker de producción se construye correctamente.
+  # Incluye lint, type-check y build de Vite (definidos en el Dockerfile).
+  # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-24.04
     needs: validate
-  
-  if: |
+
+    if: |
       github.ref == 'refs/heads/master' ||
       startsWith(github.ref, 'refs/heads/release/') ||
       (github.event_name == 'pull_request' && github.base_ref == 'master') ||
       (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/'))
-  
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    # Cache de layers de Docker para acelerar builds sucesivos
-    - name: Cache Docker layers
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ hashFiles('frontend/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    # Construye la imagen de producción completa
-    # Si lint, tsc o vite build fallan dentro del Dockerfile, este step falla
-    - name: Build production Docker image
-      uses: docker/build-push-action@v6
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile
-        target: production
-        push: false  # Solo buildea, no pushea a ningún registry todavía
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Workaround necesario para evitar que el cache crezca indefinidamente
-    - name: Move Docker cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      # Cache de layers de Docker para acelerar builds sucesivos
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Construye la imagen de producción completa
+      # Si lint, tsc o vite build fallan dentro del Dockerfile, este step falla
+      - name: Build production Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          target: production
+          push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      # Workaround necesario para evitar que el cache crezca indefinidamente
+      - name: Move Docker cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
