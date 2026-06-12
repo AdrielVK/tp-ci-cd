@@ -159,17 +159,11 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # 1. Si es un tag de Git (v1.0.0), genera '1.0.0'
-            type=semver,pattern={{version}}
+            # Si es un git tag (v1.0.0), genera '1.0.0' + 'latest'
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             
-            # 2. Si es un push a master, genera un tag con el SHA corto del commit (ej: 714e0b0)
-            type=sha,prefix=,format=short
-            
-            # 3. Mantiene también el tag de la rama 'master'
-            type=ref,event=branch
-            
-            # 4. Siempre genera/actualiza 'latest' para que Render aplique el CD
-            type=raw,value=latest
+            # Si es un push a master (sin tag), solo genera 'latest'
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
       
       - name: Build and push to GHCR
         uses: docker/build-push-action@v5
