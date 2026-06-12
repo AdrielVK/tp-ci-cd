@@ -1,29 +1,64 @@
-name: CD - Deploy to Render
+name: CD
 
-# Se ejecuta al terminar el flujo de CI
 on:
+  # Se ejecuta al terminar el flujo de CI exitosamente
   workflow_run:
-    workflows: ["CI"] # REEMPLAZA ESTO con el 'name' exacto de tu archivo ci.yml
+    workflows: ["CI"]
     types:
       - completed
     branches:
-      - master # O la rama que uses para producción
+      - master
 
 jobs:
   deploy:
+    name: Deploy to Render
     runs-on: ubuntu-latest
-    
-    # Solo ejecutamos el despliegue si el CI terminó con éxito
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
+    # Solo ejecuta si el CI terminó con éxito
+    if: github.event.workflow_run.conclusion == 'success'
+
     steps:
-      - name: Disparar despliegue en Render
-        env:
-          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from latest git tag
+        id: version
         run: |
-          if [ -z "$deploy_url" ]; then
-            echo "Error: La URL del webhook no está configurada en los secrets."
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          VERSION=${VERSION#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Deploying version: ${VERSION}"
+
+      - name: Validate Render webhook URL
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "❌ Error: RENDER_DEPLOY_HOOK_URL no está configurado en los secrets"
             exit 1
           fi
-          echo "Notificando a Render para iniciar el despliegue..."
-          curl -X POST "$deploy_url"
+          echo "✅ Render webhook URL configured"
+
+      - name: Trigger deployment on Render
+        run: |
+          echo "🚀 Triggering deployment on Render..."
+          echo "   Version: ${{ steps.version.outputs.version }}"
+          echo "   Image: ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            --fail \
+            --silent \
+            --show-error
+          echo ""
+          echo "✅ Deployment triggered successfully"
+
+      - name: Log deployment info
+        run: |
+          echo "📋 Deployment Info:"
+          echo "  - Workflow: ${{ github.workflow }}"
+          echo "  - Triggered by: ${{ github.event.workflow_run.name }}"
+          echo "  - Version: ${{ steps.version.outputs.version }}"
+          echo "  - Commit: ${{ github.sha }}"
+          echo "  - Branch: ${{ github.ref }}"
+          echo "  - Image: ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
+          echo "  - Latest: ghcr.io/${{ github.repository }}:latest"

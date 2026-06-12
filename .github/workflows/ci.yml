@@ -1,22 +1,18 @@
 name: CI
 
 on:
-  # El CI se ejecuta cuando se hace push/pull-request a las siguientes ramas:
   push:
     branches:
       - master
       - develop
       - "release/**"
       - "hotfix/**"
-    tags:
-      - "*.*.*"
 
   pull_request:
     branches:
       - master
       - develop
 
-# Cancela runs anteriores del mismo PR si se hace un nuevo push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -36,17 +32,14 @@ jobs:
         working-directory: frontend
 
     steps:
-      # Trae el código al runner
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Instala pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9.12.3
 
-      # Instala Node 22 y activa el cache de pnpm
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -54,31 +47,21 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      # Instala dependencias respetando el lockfile exacto
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Los siguientes pasos se podrían ejecutar con el script "validate" definido
-      # en package.json, pero se separan para tener mejor feedback visual en GitHub
-
-      # Verifica que no haya errores de tipos en TypeScript
       - name: Type check
         run: pnpm type-check
 
-      # Verifica que no haya errores ni warnings de ESLint
       - name: Lint
         run: pnpm lint:ci
 
-      # Verifica que todo el código cumpla el formato de Prettier
       - name: Format check
         run: pnpm format:check
 
-      # Verifica que los tests se ejecuten correctamente y que la cobertura supere los umbrales
       - name: Test & Coverage
         run: pnpm coverage
 
-      # Publica el reporte de cobertura como artefacto descargable
-      # Disponible en la pestaña "Actions" del PR en GitHub
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
@@ -89,14 +72,8 @@ jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
   # JOB 2 — build
-  # Verifica que el Dockerfile de producción se construye correctamente.
-  # Incluye lint, type-check y build de Vite (definidos en el Dockerfile).
-  #
-  # Corre en:
-  #   - TODOS los PRs (feature/* → develop, develop → release/*, release/* → master)
-  #   - Push a master (código productivo)
-  #   - Push a develop (rama de integración)
-  #   - Push a release/* (release candidates)
+  # Valida que el Dockerfile compila correctamente
+  # Corre en todos los PRs y ramas principales
   # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -108,17 +85,17 @@ jobs:
       github.ref == 'refs/heads/master' ||
       github.ref == 'refs/heads/develop' ||
       startsWith(github.ref, 'refs/heads/release/') ||
-      startsWith(github.ref, 'refs/tags/v')
+      startsWith(github.ref, 'refs/heads/hotfix/')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para acceder a los tags
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Construye la imagen de producción completa
-      # Si lint, tsc o vite build fallan dentro del Dockerfile, este step falla
       - name: Build production Docker image
         uses: docker/build-push-action@v6
         with:
@@ -128,43 +105,78 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 3 — publish
+  # Publica imagen a GHCR con versionado semántico automático
+  #
+  # Solo se ejecuta cuando hay PUSH a master (código productivo)
+  # Lee automáticamente el último tag de Git para versionar la imagen
+  #
+  # Flujo Gitflow:
+  #   git flow release finish 1.0.0
+  #   git push origin master --follow-tags
+  #
+  # Resultado en GHCR:
+  #   - ghcr.io/adrielvk/tp-ci-cd:1.0.0 (versión exacta)
+  #   - ghcr.io/adrielvk/tp-ci-cd:latest (siempre apunta a lo más reciente)
+  # ───────────────────────────────────────────────────────────────────────────
   publish:
     name: Publish to GHCR
     needs: build
     runs-on: ubuntu-24.04
+    
+    # Solo publica cuando hay push a master (código productivo)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
     permissions:
       contents: read
       packages: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0  # Necesario para acceder a los tags
+
+      - name: Get version from latest git tag
+        id: version
+        run: |
+          # Obtiene el último tag (ej: 1.0.0 o v1.0.0)
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          # Elimina el prefijo "v" si existe (v1.0.0 → 1.0.0)
+          VERSION=${VERSION#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ Version detected: ${VERSION}"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=latest
-      
+
       - name: Build and push to GHCR
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
+          labels: |
+            git.version=${{ steps.version.outputs.version }}
+            git.commit=${{ github.sha }}
+            git.ref=${{ github.ref }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Log published image
+        run: |
+          echo "✅ Image published to GHCR"
+          echo "   - ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
+          echo "   - ghcr.io/${{ github.repository }}:latest"
