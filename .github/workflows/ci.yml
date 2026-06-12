@@ -129,7 +129,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   publish:
-    name: Publish Latest to GHCR
+    name: Publish to GHCR
     needs: build
     runs-on: ubuntu-24.04
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -157,7 +157,6 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
-          labels: github.sha=${{ github.sha }}
+          tags: ghcr.io/${{ github.repository | lower }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
