@@ -129,12 +129,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   publish:
-    name: Publish to GHCR
+    name: Publish Latest to GHCR
     needs: build
     runs-on: ubuntu-24.04
-    if: |
-      github.event_name == 'push' && 
-      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     permissions:
       contents: read
       packages: write
@@ -153,25 +151,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            # Si es un git tag (v1.0.0), genera '1.0.0' + 'latest'
-            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            
-            # Si es un push a master (sin tag), solo genera 'latest'
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
-      
       - name: Build and push to GHCR
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ github.repository }}:latest
+          labels: github.sha=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
