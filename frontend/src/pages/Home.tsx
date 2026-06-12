@@ -6,6 +6,7 @@ export default function Home() {
       <p className="mt-4 text-red-600">Este es un test.</p>
       <p className="mt-4 font-extrabold text-red-600">Este es un test de incremento de sw.</p>
       <p className="mt-4 font-semibold text-yellow-600">Este es un test de incremento de sw 2</p>
+      <p className="mt-4 font-semibold text-green-600">Este es un test de incremento de sw 3</p>
     </section>
   );
 }
