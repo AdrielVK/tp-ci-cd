@@ -8,6 +8,8 @@ on:
       - develop
       - "release/**"
       - "hotfix/**"
+    tags:
+      - "v*.*.*"
 
   pull_request:
     branches:
@@ -106,6 +108,7 @@ jobs:
       github.ref == 'refs/heads/master' ||
       github.ref == 'refs/heads/develop' ||
       startsWith(github.ref, 'refs/heads/release/')
+      startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - name: Checkout
@@ -129,8 +132,9 @@ jobs:
     name: Publish to GHCR
     needs: build
     runs-on: ubuntu-24.04
-    # ⭐ SOLO en master (la rama productiva)
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: |
+      github.event_name == 'push' && 
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
@@ -155,8 +159,12 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            # Si es un tag de Git (v1.2.3), genera la etiqueta '1.2.3' (quita la 'v')
+            type=semver,pattern={{version}}
+            # Genera también una etiqueta '1.2' para tracking menor
+            type=semver,pattern={{major}}.{{minor}}
+            # Fuerza a que siempre se genere la etiqueta 'latest' en estos eventos
+            type=raw,value=latest
       
       - name: Build and push to GHCR
         uses: docker/build-push-action@v5

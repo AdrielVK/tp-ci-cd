@@ -1,0 +1,29 @@
+name: CD - Deploy to Render
+
+# Se ejecuta al terminar el flujo de CI
+on:
+  workflow_run:
+    workflows: ["CI"] # REEMPLAZA ESTO con el 'name' exacto de tu archivo ci.yml
+    types:
+      - completed
+    branches:
+      - master # O la rama que uses para producción
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Solo ejecutamos el despliegue si el CI terminó con éxito
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Disparar despliegue en Render
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$deploy_url" ]; then
+            echo "Error: La URL del webhook no está configurada en los secrets."
+            exit 1
+          fi
+          echo "Notificando a Render para iniciar el despliegue..."
+          curl -X POST "$deploy_url"
