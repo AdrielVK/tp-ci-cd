@@ -4,6 +4,7 @@ export default function Home() {
       <h2 className="text-3xl font-semibold text-slate-950">Hola mundo</h2>
       <p className="mt-4 text-slate-600">Esta es la vista principal de la aplicación.</p>
       <p className="mt-4 text-red-600">Este es un test.</p>
+      <p className="mt-4 font-extrabold text-red-600">Este es un test de incremento de sw.</p>
     </section>
   );
 }

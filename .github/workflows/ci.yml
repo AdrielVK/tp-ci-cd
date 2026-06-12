@@ -159,11 +159,16 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # Si es un tag de Git (v1.2.3), genera la etiqueta '1.2.3' (quita la 'v')
+            # 1. Si es un tag de Git (v1.0.0), genera '1.0.0'
             type=semver,pattern={{version}}
-            # Genera también una etiqueta '1.2' para tracking menor
-            type=semver,pattern={{major}}.{{minor}}
-            # Fuerza a que siempre se genere la etiqueta 'latest' en estos eventos
+            
+            # 2. Si es un push a master, genera un tag con el SHA corto del commit (ej: 714e0b0)
+            type=sha,prefix=,format=short
+            
+            # 3. Mantiene también el tag de la rama 'master'
+            type=ref,event=branch
+            
+            # 4. Siempre genera/actualiza 'latest' para que Render aplique el CD
             type=raw,value=latest
       
       - name: Build and push to GHCR
