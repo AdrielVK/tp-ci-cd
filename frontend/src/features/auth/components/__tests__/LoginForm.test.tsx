@@ -15,9 +15,7 @@ describe("LoginForm", () => {
     expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /¿no tienes una cuenta\? regístrate/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /regístrate aquí/i })).toBeInTheDocument();
   });
 
   it("shows validation errors when submitting an empty form", async () => {
