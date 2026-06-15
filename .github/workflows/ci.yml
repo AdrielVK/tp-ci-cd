@@ -7,120 +7,90 @@ on:
       - develop
       - "release/**"
       - "hotfix/**"
-
   pull_request:
     branches:
       - master
       - develop
+      - "release/**"
+      - "hotfix/**"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }} 
   cancel-in-progress: true
 
 jobs:
-  # ───────────────────────────────────────────────────────────────────────────
-  # JOB 1 — validate
-  # Verifica tipos, lint, formato y tests con cobertura
-  # Corre en TODAS las ramas y PRs
-  # ───────────────────────────────────────────────────────────────────────────
+  #JOB - 1 -- VALIDAR
   validate:
-    name: Validate
+    name: Validar
     runs-on: ubuntu-24.04
 
     defaults:
       run:
         working-directory: frontend
-
+    
     steps:
+      #Trae el repositorio a la vm del runner de github actions
       - name: Checkout
         uses: actions/checkout@v4
-
+      #Configura pnpm para manejar las dependencias del proyecto
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9.12.3
-
+      #Configura Node y cachea las dependencias para acelerar futuras ejecuciones
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
-
+      #Instala las dependencias del proyecto, solo si el lockfile no ha cambiado para asegurar consistencia
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
+      #Checkea linting, formato, tipos, test de componentes y cobertura de código
       - name: Type check
         run: pnpm type-check
-
       - name: Lint
         run: pnpm lint:ci
-
       - name: Format check
         run: pnpm format:check
-
       - name: Test & Coverage
         run: pnpm coverage
-
+      
+      #sube el artefacto del reporte de cobertura de test.
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() # Asegura que el reporte se suba incluso si los tests fallan
         with:
           name: coverage-report
           path: frontend/coverage
           retention-days: 7
-
-  # ───────────────────────────────────────────────────────────────────────────
-  # JOB 2 — build
-  # Valida que el Dockerfile compila correctamente
-  # Corre en todos los PRs y ramas principales
-  # ───────────────────────────────────────────────────────────────────────────
+  #JOB - 2 -- BUILD
+  #Valida que el dockerfile se construya correctamente
   build:
     name: Build
     runs-on: ubuntu-24.04
     needs: validate
 
-    if: |
-      github.event_name == 'pull_request' ||
-      github.ref == 'refs/heads/master' ||
-      github.ref == 'refs/heads/develop' ||
-      startsWith(github.ref, 'refs/heads/release/') ||
-      startsWith(github.ref, 'refs/heads/hotfix/')
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Necesario para acceder a los tags
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      
       - name: Build production Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           target: production
+          #Verifica que el dockerfile se constuya correctamente, pero no sube la imagen a ningún registry.
           push: false
+          #usa el cache de github actions para acelerar la construcción de la imagen.
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  # ───────────────────────────────────────────────────────────────────────────
-  # JOB 3 — publish
-  # Publica imagen a GHCR con versionado semántico automático
-  #
-  # Solo se ejecuta cuando hay PUSH a master (código productivo)
-  # Lee automáticamente el último tag de Git para versionar la imagen
-  #
-  # Flujo Gitflow:
-  #   git flow release finish 1.0.0
-  #   git push origin master --follow-tags
-  #
-  # Resultado en GHCR:
-  #   - ghcr.io/adrielvk/tp-ci-cd:1.0.0 (versión exacta)
-  #   - ghcr.io/adrielvk/tp-ci-cd:latest (siempre apunta a lo más reciente)
-  # ───────────────────────────────────────────────────────────────────────────
+  
   publish:
     name: Publish to GHCR
     needs: build
@@ -128,30 +98,32 @@ jobs:
     
     # Solo publica cuando hay push a master (código productivo)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    
+
     permissions:
       contents: read
       packages: write
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para acceder a los tags
+          fetch-depth: 0 
 
       - name: Get version from latest git tag
         id: version
         run: |
-          # Obtiene el último tag (ej: 1.0.0 o v1.0.0)
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-          # Elimina el prefijo "v" si existe (v1.0.0 → 1.0.0)
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null)
+          if [ -z "$VERSION" ]; then
+            echo "❌ No git tag found. Run: git flow release finish x.x.x && git push --follow-tags"
+            exit 1
+          fi
           VERSION=${VERSION#v}
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "✅ Version detected: ${VERSION}"
-
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -160,7 +132,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push to GHCR
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
@@ -169,14 +141,51 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository }}:latest
           labels: |
-            git.version=${{ steps.version.outputs.version }}
-            git.commit=${{ github.sha }}
-            git.ref=${{ github.ref }}
-          cache-from: type=gha
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha      
           cache-to: type=gha,mode=max
-
+      
       - name: Log published image
         run: |
           echo "✅ Image published to GHCR"
           echo "   - ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
           echo "   - ghcr.io/${{ github.repository }}:latest"
+  
+  deploy:
+    name: Deploy to Render
+    needs: publish
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Validate Render webhook URL
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "❌ Error: RENDER_DEPLOY_HOOK_URL no está configurado en los secrets"
+            exit 1
+          fi
+          echo "✅ Render webhook URL configured"
+
+      - name: Trigger deployment on Render
+        run: |
+          echo "🚀 Triggering deployment on Render..."
+          echo "   Version: ${{ needs.publish.outputs.version }}"
+          echo "   Image: ghcr.io/${{ github.repository }}:${{ needs.publish.outputs.version }}"
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            --fail \
+            --silent \
+            --show-error
+          echo ""
+          echo "✅ Deployment triggered successfully"
+
+      - name: Log deployment info
+        run: |
+          echo "📋 Deployment Info:"
+          echo "  - Triggered by: ${{ github.actor }}"
+          echo "  - Version: ${{ needs.publish.outputs.version }}"
+          echo "  - Commit: ${{ github.sha }}"
+          echo "  - Image: ghcr.io/${{ github.repository }}:${{ needs.publish.outputs.version }}"
+          echo "  - Latest: ghcr.io/${{ github.repository }}:latest"
