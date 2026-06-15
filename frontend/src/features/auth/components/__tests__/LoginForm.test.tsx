@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 import LoginForm from "@/features/auth/components/LoginForm";
 
 describe("LoginForm", () => {
   it("renders the login fields and submit button", () => {
-    render(<LoginForm />);
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
@@ -17,7 +22,11 @@ describe("LoginForm", () => {
 
   it("shows validation errors when submitting an empty form", async () => {
     const user = userEvent.setup();
-    render(<LoginForm />);
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>,
+    );
 
     await user.click(screen.getByRole("button", { name: /ingresar/i }));
 
@@ -29,7 +38,11 @@ describe("LoginForm", () => {
 
   it("submits successfully with valid data and does not display validation errors", async () => {
     const user = userEvent.setup();
-    render(<LoginForm />);
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>,
+    );
 
     await user.type(screen.getByLabelText(/correo electrónico/i), "test@example.com");
     await user.type(screen.getByLabelText(/contraseña/i), "secret123");
