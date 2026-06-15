@@ -1,4 +1,5 @@
 import { useForm, type FieldErrors, type Resolver } from "react-hook-form";
+import { Link } from "react-router-dom";
 
 import Button from "@/components/ui/Button";
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas/LoginSchema";
@@ -62,6 +63,13 @@ export default function LoginForm() {
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Ingresando..." : "Ingresar"}
       </Button>
+      <div className="mt-4 text-sm text-slate-600">
+        ¿No tienes una cuenta?{" "}
+        <Link to="/register" className="text-blue-600 hover:underline">
+          Regístrate aquí
+        </Link>
+        .
+      </div>
     </form>
   );
 }
