@@ -138,8 +138,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ steps.repo.outputs.name }}:latest
           labels: |
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -150,8 +150,8 @@ jobs:
       - name: Log published image
         run: |
           echo "✅ Image published to GHCR"
-          echo "   - ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}"
-          echo "   - ghcr.io/${{ github.repository }}:latest"
+          echo "   - ghcr.io/$${{ steps.repo.outputs.name }}:${{ steps.version.outputs.version }}"
+          echo "   - ghcr.io/$${{ steps.repo.outputs.name }}:latest"
   
   deploy:
     name: Deploy to Render
