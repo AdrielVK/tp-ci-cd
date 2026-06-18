@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Navbar from "@/components/ui/Navbar";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import { routes } from "@/router/routes";
 
 export default function AppRouter() {
@@ -15,6 +16,7 @@ export default function AppRouter() {
           <Routes>
             <Route path={routes.home} element={<Home />} />
             <Route path={routes.login} element={<Login />} />
+            <Route path={routes.register} element={<Register />} />
           </Routes>
         </main>
       </div>

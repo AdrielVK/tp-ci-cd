@@ -34,9 +34,6 @@ CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 FROM base AS builder
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm lint:ci
-RUN pnpm type-check
-RUN pnpm test 
 RUN pnpm build
 
 # Stage 4 — production

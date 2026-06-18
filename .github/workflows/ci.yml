@@ -30,6 +30,8 @@ jobs:
       #Trae el repositorio a la vm del runner de github actions
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       #Configura pnpm para manejar las dependencias del proyecto
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -84,7 +86,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#36a64f'
           SLACK_TITLE: '✅ Job Success: Validate'
-          SLACK_MESSAGE: 'Success Validate `${{ steps.tag_checker.outputs.version }}`'
+          SLACK_MESSAGE: 'Validacion exitosa `${{ steps.tag_checker.outputs.version }}`'
   
       - name: Slack Failure Notification
         if: failure()
@@ -93,7 +95,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#ff0000'
           SLACK_TITLE: '❌ Job Failed: Validate'
-          SLACK_MESSAGE: 'El Job *Validate* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_MESSAGE: 'El Job *Validate* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aca: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   #JOB - 2 -- BUILD
   #Valida que el dockerfile se construya correctamente
   build:
@@ -136,7 +138,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#36a64f'
           SLACK_TITLE: '✅ Job Success: Build'
-          SLACK_MESSAGE: 'Success Build `${{ steps.tag_checker.outputs.version }}`'
+          SLACK_MESSAGE: 'Build exitosa `${{ steps.tag_checker.outputs.version }}`'
 
       - name: Slack Failure Notification
         if: failure()
@@ -145,7 +147,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#ff0000'
           SLACK_TITLE: '❌ Job Failed: Build'
-          SLACK_MESSAGE: 'El Job *Build* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_MESSAGE: 'El Job *Build* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aca: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   
   publish:
     name: Publish to GHCR
@@ -219,7 +221,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#36a64f'
           SLACK_TITLE: '✅ Job Success: Publish'
-          SLACK_MESSAGE: 'Success Publish `${{ steps.version.outputs.version }}`'
+          SLACK_MESSAGE: 'Publish exitosa `${{ steps.version.outputs.version }}`'
 
       - name: Slack Failure Notification
         if: failure()
@@ -228,7 +230,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#ff0000'
           SLACK_TITLE: '❌ Job Failed: Publish'
-          SLACK_MESSAGE: 'El Job *Publish* ha fallado en el tag `${{ steps.version.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_MESSAGE: 'El Job *Publish* ha fallado en el tag `${{ steps.version.outputs.version }}`.\n👉 Ver logs completos del fallo aca: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   
   deploy:
     name: Deploy to Render
@@ -279,7 +281,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#36a64f'
           SLACK_TITLE: '🚀 Job Success: Deploy'
-          SLACK_MESSAGE: 'Success Deploy `${{ needs.publish.outputs.version }}` en Render'
+          SLACK_MESSAGE: 'Deploy exitosa `${{ needs.publish.outputs.version }}` en Render'
 
       - name: Slack Failure Notification
         if: failure()
@@ -288,4 +290,4 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: '#ff0000'
           SLACK_TITLE: '❌ Job Failed: Deploy'
-          SLACK_MESSAGE: 'El Job *Deploy* ha fallado para la versión `${{ needs.publish.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          SLACK_MESSAGE: 'El Job *Deploy* ha fallado para la versión `${{ needs.publish.outputs.version }}`.\n👉 Ver logs completos del fallo aca: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
