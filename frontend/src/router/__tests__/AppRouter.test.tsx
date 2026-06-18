@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import AppRouter from "@/router/AppRouter";
 
 describe("AppRouter", () => {
-  it("renders the home page by default and navigates to login", async () => {
+  it("renderizar el home por defecto y navegar al login", async () => {
     const user = userEvent.setup();
     render(<AppRouter />);
 
@@ -18,7 +18,7 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("heading", { name: /hola mundo/i })).toBeInTheDocument();
   });
 
-  it("navigates from login to register", async () => {
+  it("navegar del login al registro", async () => {
     const user = userEvent.setup();
     render(<AppRouter />);
 

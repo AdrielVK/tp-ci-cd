@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import Field from "@/features/auth/components/Field";
 
 describe("Field", () => {
-  it("renders a label and input with the provided attributes", () => {
+  it("renderizar el campo de entrada con las propiedades proporcionadas", () => {
     render(<Field label="Correo electrónico" name="email" type="email" />);
 
     expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
@@ -11,7 +11,7 @@ describe("Field", () => {
     expect(screen.getByRole("textbox")).toHaveAttribute("type", "email");
   });
 
-  it("displays the error message and accessibility attributes when error is present", () => {
+  it("muestra el mensaje de error y los atributos de accesibilidad cuando hay un error", () => {
     render(
       <Field label="Correo electrónico" name="email" type="email" error="El email es requerido" />,
     );
