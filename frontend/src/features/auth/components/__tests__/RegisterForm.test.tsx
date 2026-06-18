@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import RegisterForm from "@/features/auth/components/RegisterForm";
 
 describe("RegisterForm", () => {
-  it("renders the register fields and submit button", () => {
+  it("renderizar los campos de registro y el boton de envio", () => {
     render(
       <MemoryRouter>
         <RegisterForm />
@@ -20,7 +20,7 @@ describe("RegisterForm", () => {
     expect(screen.getByRole("link", { name: /inicia sesión aquí/i })).toBeInTheDocument();
   });
 
-  it("shows validation errors when submitting an empty form", async () => {
+  it("muestra los errores de validacion al enviar un formulario vacio", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -40,7 +40,7 @@ describe("RegisterForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows password mismatch error when passwords do not match", async () => {
+  it("muestra el error de coincidencia de contraseña cuando las contraseñas no coinciden", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -57,7 +57,7 @@ describe("RegisterForm", () => {
     expect(await screen.findByText("Las contraseñas no coinciden")).toBeInTheDocument();
   });
 
-  it("submits successfully with valid data and does not display validation errors", async () => {
+  it("no muestra errores de validación al enviar datos válidos", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>

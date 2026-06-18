@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import LoginForm from "@/features/auth/components/LoginForm";
 
 describe("LoginForm", () => {
-  it("renders the login fields and submit button", () => {
+  it("renderizar los campos de inicio de sesión y el botón de envío", () => {
     render(
       <MemoryRouter>
         <LoginForm />
@@ -18,7 +18,7 @@ describe("LoginForm", () => {
     expect(screen.getByRole("link", { name: /regístrate aquí/i })).toBeInTheDocument();
   });
 
-  it("shows validation errors when submitting an empty form", async () => {
+  it("muestra los errores de validación al enviar un formulario vacío", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -34,7 +34,7 @@ describe("LoginForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits successfully with valid data and does not display validation errors", async () => {
+  it("no muestra errores de validación al enviar datos válidos", async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
