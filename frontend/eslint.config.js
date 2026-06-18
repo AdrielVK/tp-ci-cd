@@ -120,37 +120,43 @@ export default [
       },
     },
     rules: {
-      
+      //trae las reglas de tipo estricto y de estilo de @typescript-eslint
       ...ts.configs["strict-type-checked"].rules,
       ...ts.configs["stylistic-type-checked"].rules,
-
+      //restringe el uso de 'any' , pero no en tests
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
       "@typescript-eslint/no-unsafe-call": "error",
       "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-unsafe-return": "error",
       "@typescript-eslint/no-unsafe-argument": "error",
+      //restringe las promesas no manejadas y el mal uso de promesas. 
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": [
         "error",
+        //Permite funciones async en elementos jsx, seria un falso positivo.
         { checksVoidReturn: { attributes: false } },
       ],
+      //restringe el uso de 'await' en valores que no son promesas y obliga a marcar las funciones que retornan promesas como 'async'.
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/require-await": "error",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
+      //restringe las exportaciones de tipos inconsistentes y las importaciones con efectos secundarios.
       "@typescript-eslint/consistent-type-exports": "error",
       "@typescript-eslint/no-import-type-side-effects": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
+          // Permite variables, argumentos y errores no usados que comiencen con '_', para indicar intencionalmente que no se usaran.
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      //Establece convenciones 
       "@typescript-eslint/naming-convention": [
         "error",
         // Interfaces sin prefijo "I"
@@ -159,9 +165,11 @@ export default [
           format: ["PascalCase"],
           custom: { regex: "^I[A-Z]", match: false },
         },
-        // Type aliases en PascalCase
+        // Tipos de alias en PascalCase
         { selector: "typeAlias", format: ["PascalCase"] },
-        // Enums en PascalCase
+        // Clases en PascalCase
+        { selector: "class", format: ["PascalCase"] },
+        // Enum en PascalCase
         { selector: "enum", format: ["PascalCase"] },
         // Enum members en UPPER_CASE
         { selector: "enumMember", format: ["UPPER_CASE"] },
@@ -175,11 +183,17 @@ export default [
         // Propiedades de clases/objetos en camelCase
         { selector: "classProperty", format: ["camelCase"] },
       ],
+      //obliga a usar ?? en vez de ||. Ya que daria bugs si se usan con valores falsy como '' o 0.
       "@typescript-eslint/prefer-nullish-coalescing": "error",
+      //obliga a usar el encadenamiento opcional ?. en lugar de null o undefined
       "@typescript-eslint/prefer-optional-chain": "error",
+      //evita las condicionales inncesarias.
       "@typescript-eslint/no-unnecessary-condition": "error",
+      //cubre todas las posibilidades en switch 
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+      //restringe el uso del operador no nulo !
       "@typescript-eslint/no-non-null-assertion": "error",
+      //asegura que los operadores de comparacion sean combertibles a boolean.
       "@typescript-eslint/strict-boolean-expressions": [
         "error",
         {
@@ -192,6 +206,7 @@ export default [
           allowAny: false,
         },
       ],
+      //restringe el uso de comentarios de supresión de errores de TypeScript, pero permite ts-ignore y ts-nocheck con una descripción adecuada.
       "@typescript-eslint/ban-ts-comment": [
         "error",
         {
@@ -201,6 +216,7 @@ export default [
           minimumDescriptionLength: 10,
         },
       ],
+      //restringe las importaciones relativas que suben directorios, para fomentar el uso de alias de rutas absolutas.
       "@typescript-eslint/no-restricted-imports": [
         "error",
         {
@@ -214,23 +230,32 @@ export default [
         },
       ],
 
-      // ── React ─────────────────────────────────────────────────────────────
+      // ── REACT --> buscamos optimizar el rendereo, mejorar la legibilidad y evitar errores comunes en componentes React
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs["jsx-runtime"].rules,
       ...reactHooks.configs.recommended.rules,
 
       "react/prop-types": "off", // TypeScript lo cubre
+      // Evita componentes sin nombre
       "react/display-name": "error",
+      // Evita usar índices como keys en listas
       "react/no-array-index-key": "error",
+      // Evita componentes anidados dentro de otros componentes, lo que puede causar problemas de rendimiento y legibilidad
       "react/no-unstable-nested-components": ["error", { allowAsProps: false }],
+      // Evita fragmentos vacíos o innecesarios, pero permite fragmentos para expresiones JSX
       "react/jsx-no-useless-fragment": ["error", { allowExpressions: true }],
+      // Evita el uso de llaves innecesarias en jsx
       "react/jsx-curly-brace-presence": [
         "error",
         { props: "never", children: "never" },
       ],
+      // Obliga a usar componentes autocerrados cuando no tienen hijos
       "react/self-closing-comp": "error",
+      // Evita el uso de funciones dentro del JSX, lo que puede causar re-renderizados innecesarios
       "react/hook-use-state": "error",
+      // Evita el uso de booleanos explícitos en props, lo que mejora la legibilidad
       "react/jsx-boolean-value": ["error", "never"],
+      // Evita el uso de variables no utilizadas en JSX
       "react/jsx-no-leaked-render": [
         "error",
         { validStrategies: ["ternary", "coerce"] },
@@ -280,29 +305,46 @@ export default [
         { allowSameFolder: true, rootDir: "src", prefix: "@" },
       ],
 
-      // ── SonarJS (complejidad y code smells) ───────────────────────────────
+      // ── SonarJS (complejidad y code smells) 
+      //analiza estaticamente la arquitecura del codigo 
       ...sonarjs.configs.recommended.rules,
+      // Limita la complejidad cognitiva de las funciones para mejorar la legibilidad y mantenibilidad
       "sonarjs/cognitive-complexity": ["error", 15],
+      // Evita cadenas de texto duplicadas. deben ser extraidas a constantes 
       "sonarjs/no-duplicate-string": ["error", { threshold: 3 }],
+      // Evita funciones identicas 
       "sonarjs/no-identical-functions": "error",
+      // Evita condiciones anidadas 
       "sonarjs/no-collapsible-if": "error",
+      // Evita variables que se asignan un valor y luego se reasignan, lo que puede causar confusión.
       "sonarjs/prefer-immediate-return": "error",
 
       // ── Unicorn (mejores prácticas modernas) ──────────────────────────────
+
       "unicorn/prefer-module": "error",
+      // Obliga a usar el protocolo 'node:' para importar módulos nativos de node
       "unicorn/prefer-node-protocol": "error",
+      //evita el uso del forEach
       "unicorn/no-array-for-each": "error",
+      //evita el uso de push para agregar elementos a un array
       "unicorn/no-array-push-push": "error",
+      //evita el uso de bucles for tradicionales, promoviendo métodos de array más modernos y legibles como map, filter, reduce, etc
       "unicorn/no-for-loop": "error",
+      // Obliga a usar métodos de array más específicos y legibles en lugar de map + flatten o filter + map
       "unicorn/prefer-array-flat-map": "error",
       "unicorn/prefer-array-some": "error",
       "unicorn/prefer-includes": "error",
       "unicorn/prefer-string-slice": "error",
+      // Obliga a usar expresiones ternarias en lugar de asignaciones condicionales 
       "unicorn/prefer-ternary": "error",
       "unicorn/prefer-nullish-coalescing": "off", // Cubierto por TS
+      // Evita el uso de 'undefined' como valor, promoviendo el uso de 'null' o la ausencia de valor
       "unicorn/no-useless-undefined": "error",
+      // Evita el uso de variables que solo se usan dentro de un bloque
       "unicorn/consistent-function-scoping": "error",
+      // Evita el uso de expresiones ternarias anidadas
       "unicorn/no-nested-ternary": "error",
+      // Obliga a usar nombres de archivo en kebab-case o PascalCase, pero ignora archivos de test y mocks que suelen tener guiones bajos.
       "unicorn/filename-case": [
         "error",
         {
