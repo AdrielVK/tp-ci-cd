@@ -1,27 +1,27 @@
 services:
 
-  # ── Desarrollo ─────────────────────────────────────────────────────────────
+  # ── Desarrollo 
   frontend-dev:
     build:
       context: .
-      target: development        # Apunta al stage "development" del Dockerfile
+      target: development        # Apunta al stage "development" del dockerfile
     container_name: frontend-dev
     ports:
       - "5173:5173"
     volumes:
-      # Monta el código fuente para que HMR funcione en tiempo real
+      # Monta el código fuente para que hmr funcione en tiempo real
       - .:/app
-      # Evita que el node_modules del host pise el del contenedor
+      # Evita que el node_modules del host/local pise el del contenedor
       - /app/node_modules
     environment:
       - NODE_ENV=development
     restart: unless-stopped
 
-  # ── Producción ─────────────────────────────────────────────────────────────
+  # ── Produccion 
   frontend-prod:
     build:
       context: .
-      target: production         # Apunta al stage "production" del Dockerfile
+      target: production         # Apunta al stage "production" del dockerfile
     container_name: frontend-prod
     ports:
       - "80:80"

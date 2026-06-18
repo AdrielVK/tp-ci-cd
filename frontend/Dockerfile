@@ -1,10 +1,9 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Stage 1 — base
-# Imagen mínima compartida por dev y prod
-# ─────────────────────────────────────────────────────────────────────────────
+# STAGE 1 — BASE
+# Imagen mínima compartida por dev , builder y production
 FROM node:22-alpine AS base
 
-# Instala pnpm globalmente via corepack (viene incluido en Node 22)
+# Instala pnpm globalmente via corepack (viene incluido en Node 22). 
+# Corepack es el gestor de paquetes recomendado por node
 RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
 WORKDIR /app
@@ -13,14 +12,11 @@ WORKDIR /app
 # el cache de Docker: si no cambian, no se reinstalan
 COPY package.json pnpm-lock.yaml ./
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — development
 # Levanta el dev server de Vite con HMR
-# ─────────────────────────────────────────────────────────────────────────────
 FROM base AS development
 
-# Instala TODAS las dependencias (incluyendo devDependencies)
+# Instala TODAS las dependencias (incluyendo las de desarrollo))
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -31,22 +27,21 @@ EXPOSE 5173
 CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Stage 3 — builder
 # Compila el proyecto para producción
-# ─────────────────────────────────────────────────────────────────────────────
+
 FROM base AS builder
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm lint:ci
 RUN pnpm type-check
+RUN pnpm test 
 RUN pnpm build
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Stage 4 — production
-# Imagen final mínima con Nginx sirviendo el build estático
-# ─────────────────────────────────────────────────────────────────────────────
+# Imagen final mínima con nginx sirviendo el build estático
+
 FROM nginx:1.27-alpine AS production
 
 # Elimina la config por defecto de Nginx

@@ -10,9 +10,7 @@ on:
   pull_request:
     branches:
       - master
-      - develop
-      - "release/**"
-      - "hotfix/**"
+      - develop8
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }} 
@@ -47,6 +45,13 @@ jobs:
       #Instala las dependencias del proyecto, solo si el lockfile no ha cambiado para asegurar consistencia
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Obtener el Tag de manera dinámica para usarlo en las notificaciones
+      - name: Get Latest Tag
+        id: tag_checker
+        if: always()
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "No Tag")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
       #Checkea linting, formato, tipos, test de componentes y cobertura de código
       - name: Type check
         run: pnpm type-check
@@ -71,6 +76,24 @@ jobs:
         with:
           files: frontend/coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Slack Success Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_TITLE: '✅ Job Success: Validate'
+          SLACK_MESSAGE: 'Success Validate `${{ steps.tag_checker.outputs.version }}`'
+  
+      - name: Slack Failure Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: '❌ Job Failed: Validate'
+          SLACK_MESSAGE: 'El Job *Validate* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   #JOB - 2 -- BUILD
   #Valida que el dockerfile se construya correctamente
   build:
@@ -81,6 +104,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Get Latest Tag
+        id: tag_checker
+        if: always()
+        run: |
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "No Tag")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT        
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -96,6 +128,24 @@ jobs:
           #usa el cache de github actions para acelerar la construcción de la imagen.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Slack Success Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_TITLE: '✅ Job Success: Build'
+          SLACK_MESSAGE: 'Success Build `${{ steps.tag_checker.outputs.version }}`'
+
+      - name: Slack Failure Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: '❌ Job Failed: Build'
+          SLACK_MESSAGE: 'El Job *Build* ha fallado en el tag `${{ steps.tag_checker.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   
   publish:
     name: Publish to GHCR
@@ -113,6 +163,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
 
       - name: Set repository name to lowercase
         id: repo
@@ -161,7 +212,24 @@ jobs:
           echo "✅ Image published to GHCR"
           echo "   - ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.version.outputs.version }}"
           echo "   - ghcr.io/${{ steps.repo.outputs.name }}:latest"
-        
+      - name: Slack Success Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_TITLE: '✅ Job Success: Publish'
+          SLACK_MESSAGE: 'Success Publish `${{ steps.version.outputs.version }}`'
+
+      - name: Slack Failure Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: '❌ Job Failed: Publish'
+          SLACK_MESSAGE: 'El Job *Publish* ha fallado en el tag `${{ steps.version.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+  
   deploy:
     name: Deploy to Render
     needs: publish
@@ -176,6 +244,11 @@ jobs:
             exit 1
           fi
           echo "✅ Render webhook URL configured"
+      
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Trigger deployment on Render
         run: |
@@ -198,3 +271,21 @@ jobs:
           echo "  - Commit: ${{ github.sha }}"
           echo "  - Image: ghcr.io/${{ github.repository }}:${{ needs.publish.outputs.version }}"
           echo "  - Latest: ghcr.io/${{ github.repository }}:latest"
+      
+      - name: Slack Success Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#36a64f'
+          SLACK_TITLE: '🚀 Job Success: Deploy'
+          SLACK_MESSAGE: 'Success Deploy `${{ needs.publish.outputs.version }}` en Render'
+
+      - name: Slack Failure Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: '#ff0000'
+          SLACK_TITLE: '❌ Job Failed: Deploy'
+          SLACK_MESSAGE: 'El Job *Deploy* ha fallado para la versión `${{ needs.publish.outputs.version }}`.\n👉 Ver logs completos del fallo aquí: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
