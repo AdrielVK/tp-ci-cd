@@ -34,6 +34,7 @@ CMD ["pnpm", "dev", "--host", "0.0.0.0"]
 FROM base AS builder
 RUN pnpm install --frozen-lockfile
 COPY . .
+RUN pnpm build
 
 # Stage 4 — production
 # Imagen final mínima con nginx sirviendo el build estático
