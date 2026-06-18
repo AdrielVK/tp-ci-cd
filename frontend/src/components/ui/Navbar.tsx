@@ -7,7 +7,7 @@ export default function Navbar() {
     <header className="border-b border-slate-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur-sm sm:px-6">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
         <Link to={routes.home} className="text-lg font-semibold text-slate-950">
-          TP CI CD Vallejos Adriel
+          TP CI CD adriel
         </Link>
 
         <nav className="flex items-center gap-4 text-sm text-slate-600">
